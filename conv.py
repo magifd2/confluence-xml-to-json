@@ -9,16 +9,16 @@ from collections import defaultdict
 try:
     from lxml import etree
 except ImportError:
-    print("エラー: lxmlライブラリが見つかりません。")
-    print("このスクリプトを実行するには、lxmlをインストールする必要があります。")
-    print("ターミナルで以下のコマンドを実行してください:")
+    print("Error: lxml library not found.")
+    print("To run this script, you need to install lxml.")
+    print("Please run the following command in your terminal:")
     print("pip install lxml")
     exit(1)
 
 def clean_xhtml_content(xhtml_content):
     """
-    Confluenceのストレージ形式に含まれるXHTMLタグを簡易的に除去し、
-    プレーンテキストに近い形に変換します。
+    Simplifies XHTML tags found in Confluence storage format,
+    converting them to a form closer to plain text.
     """
     if xhtml_content is None:
         return ""
@@ -27,12 +27,12 @@ def clean_xhtml_content(xhtml_content):
 
 def parse_confluence_xml(xml_file_path, attachments_base_dir=None, restore_dir=None, debug=False):
     """
-    lxmlを使用してConfluenceのXMLエクスポートファイルを解析します。
-    添付ファイルを指定されたディレクトリに復元する機能も持ちます。
+    Parses a Confluence XML export file using lxml.
+    It also includes functionality to restore attachments to a specified directory.
     """
-    print(f"'{xml_file_path}' を解析しています...")
+    print(f"Parsing '{xml_file_path}'...")
     if not os.path.exists(xml_file_path):
-        print(f"エラー: 入力ファイル '{xml_file_path}' が見つかりません。")
+        print(f"Error: Input file '{xml_file_path}' not found.")
         return None
         
     try:
@@ -41,30 +41,30 @@ def parse_confluence_xml(xml_file_path, attachments_base_dir=None, restore_dir=N
         parser = etree.XMLParser(recover=True, huge_tree=True)
         root = etree.fromstring(xml_bytes, parser=parser)
     except Exception as e:
-        print(f"エラー: XMLファイルの解析に失敗しました。: {e}")
+        print(f"Error: Failed to parse XML file: {e}")
         return None
 
-    # --- ステップ1: 全オブジェクトをクラスごとに分類 ---
+    # --- Step 1: Classify all objects by class ---
     objects_by_class = defaultdict(list)
     for obj in root.iter('object'):
         class_attr = obj.get('class')
         if class_attr:
             objects_by_class[class_attr].append(obj)
     
-    print("--- ステップ1: 全オブジェクトの分類結果 ---")
+    print("--- Step 1: Classification results of all objects ---")
     for cls, items in sorted(objects_by_class.items()):
-        print(f"  - {cls}: {len(items)} 件")
+        print(f"  - {cls}: {len(items)} items")
     print("-" * 20)
 
-    # --- ステップ2: 関連情報を事前にマッピング ---
+    # --- Step 2: Pre-map related information ---
     users_map = {}
-    if debug: print("--- デバッグ: ユーザー情報 (ConfluenceUserImpl) の解析開始 ---")
+    if debug: print("--- Debug: Starting parsing of user information (ConfluenceUserImpl) ---")
     for i, obj in enumerate(objects_by_class.get('ConfluenceUserImpl', [])):
         user_key_node = obj.xpath("./id[@name='key']/text()")
         user_name_node = obj.xpath("./property[@name='fullName']/text() | ./property[@name='name']/text()")
         if user_key_node and user_name_node:
             users_map[user_key_node[0]] = user_name_node[0]
-    print(f"ステップ2.1: {len(users_map)} 件のユーザー情報を読み込みました。")
+    print(f"Step 2.1: Loaded {len(users_map)} user information entries.")
 
     body_content_map = {}
     for obj in objects_by_class.get('BodyContent', []):
@@ -72,7 +72,7 @@ def parse_confluence_xml(xml_file_path, attachments_base_dir=None, restore_dir=N
         body_node = obj.xpath("./property[@name='body']/text()")
         if content_id_node and body_node:
             body_content_map[content_id_node[0]] = body_node[0]
-    print(f"ステップ2.2: {len(body_content_map)} 件の本文コンテンツを読み込みました。")
+    print(f"Step 2.2: Loaded {len(body_content_map)} body content entries.")
     
     labels_map = {}
     for obj in objects_by_class.get('Label', []):
@@ -80,11 +80,11 @@ def parse_confluence_xml(xml_file_path, attachments_base_dir=None, restore_dir=N
         label_name_node = obj.xpath("./property[@name='name']/text()")
         if label_id_node and label_name_node:
             labels_map[label_id_node[0]] = label_name_node[0]
-    print(f"ステップ2.3: {len(labels_map)} 件のラベル定義を読み込みました。")
+    print(f"Step 2.3: Loaded {len(labels_map)} label definitions.")
 
-    # --- ステップ3: コンテンツプロパティを事前にマッピング ---
+    # --- Step 3: Pre-map content properties ---
     content_properties_map = {}
-    if debug: print("--- デバッグ: コンテンツプロパティ (ContentProperty) の解析開始 ---")
+    if debug: print("--- Debug: Starting parsing of content properties (ContentProperty) ---")
     for i, obj in enumerate(objects_by_class.get('ContentProperty', [])):
         prop_id_node = obj.xpath("./id[@name='id']/text()")
         prop_name_node = obj.xpath("./property[@name='name']/text()")
@@ -94,19 +94,19 @@ def parse_confluence_xml(xml_file_path, attachments_base_dir=None, restore_dir=N
                 "name": prop_name_node[0],
                 "value": prop_value_node[0]
             }
-    print(f"ステップ2.4: {len(content_properties_map)} 件のコンテンツプロパティを読み込みました。")
+    print(f"Step 2.4: Loaded {len(content_properties_map)} content properties.")
 
 
-    # --- ステップ4: ページIDをキーに関連情報をグループ化 ---
+    # --- Step 4: Group related information by page ID ---
     attachments_by_page = defaultdict(list)
     restored_count = 0
-    if debug: print("--- デバッグ: 添付ファイル (Attachment) の解析開始 ---")
+    if debug: print("--- Debug: Starting parsing of attachments (Attachment) ---")
     for i, obj in enumerate(objects_by_class.get('Attachment', [])):
         page_id_node = obj.xpath(".//property[@name='content' or @name='container' or @name='containerContent']//id[@name='id']/text()")
         attachment_id_node = obj.xpath("./id[@name='id']/text()")
 
         if not page_id_node or not attachment_id_node:
-            if debug: print("    - -> スキップ: ページIDまたは添付ファイルIDが見つかりません。")
+            if debug: print("    - -> Skipping: Page ID or attachment ID not found.")
             continue
         page_id = page_id_node[0]
         attachment_id = attachment_id_node[0]
@@ -124,14 +124,14 @@ def parse_confluence_xml(xml_file_path, attachments_base_dir=None, restore_dir=N
         filesize = int(attachment_props.get('FILESIZE', 0))
         content_type = attachment_props.get('MEDIA_TYPE', '')
         
-        # --- ここからが変更・追加したロジック ---
-        # 添付ファイルを復元し、そのパスを記録
+        # --- Start of modified/added logic ---
+        # Restore attachment and record its path
         restored_file_path = None
         if attachments_base_dir and restore_dir and filename:
             source_path = os.path.join(attachments_base_dir, page_id, attachment_id, '1')
             
             if os.path.exists(source_path):
-                # 出力先ディレクトリ構造: {restore_dir}/{ページID}/{添付ファイルID}/{元のファイル名}
+                # Output directory structure: {restore_dir}/{page_id}/{attachment_id}/{original_filename}
                 dest_dir = os.path.join(restore_dir, page_id, attachment_id)
                 dest_path = os.path.join(dest_dir, filename)
                 
@@ -141,12 +141,12 @@ def parse_confluence_xml(xml_file_path, attachments_base_dir=None, restore_dir=N
                     restored_file_path = dest_path
                     restored_count += 1
                     if debug:
-                        print(f"    - -> 復元成功: '{source_path}' -> '{dest_path}'")
+                        print(f"    - -> Restore successful: '{source_path}' -> '{dest_path}'")
                 except Exception as e:
-                    print(f"    - -> エラー: ファイルの復元に失敗しました: {e}")
+                    print(f"    - -> Error: Failed to restore file: {e}")
             elif debug:
-                print(f"    - -> 警告: 添付ファイルのソースが見つかりません: {source_path}")
-        # --- ここまでが変更・追加したロジック ---
+                print(f"    - -> Warning: Attachment source not found: {source_path}")
+        # --- End of modified/added logic ---
 
         attachments_by_page[page_id].append({
             'id': attachment_id,
@@ -155,17 +155,17 @@ def parse_confluence_xml(xml_file_path, attachments_base_dir=None, restore_dir=N
             'content_type': content_type,
             'author': users_map.get(creator_key_node[0]) if creator_key_node else None,
             'created_at': (obj.xpath("./property[@name='creationDate']/text()") or [''])[0],
-            'filepath': restored_file_path  # 復元後のファイルパスを追加
+            'filepath': restored_file_path  # Add restored file path
         })
-    print(f"ステップ3.1: {len(attachments_by_page)} 件のページに紐づく添付ファイルをグループ化しました。")
+    print(f"Step 3.1: Grouped {len(attachments_by_page)} attachments linked to pages.")
     if restore_dir:
-        print(f"ステップ3.1.1: {restored_count} 件の添付ファイルを '{restore_dir}' に復元しました。")
+        print(f"Step 3.1.1: Restored {restored_count} attachments to '{restore_dir}'.")
 
     comments_by_page = defaultdict(list)
-    # (コメント部分のロジックは変更なし)
-    print(f"ステップ3.2: {len(comments_by_page)} 件のページに紐づくコメントをグループ化しました。")
+    # (Comment logic remains unchanged)
+    print(f"Step 3.2: Grouped {len(comments_by_page)} comments linked to pages.")
 
-    # --- ステップ5: 全ての情報を組み立てる ---
+    # --- Step 5: Assemble all information ---
     content_data = []
     content_types = ['Page', 'Blogpost', 'CustomContentEntityObject']
     for content_type in content_types:
@@ -219,40 +219,37 @@ def parse_confluence_xml(xml_file_path, attachments_base_dir=None, restore_dir=N
 
             content_data.append(page_info)
 
-    print(f"ステップ4: {len(content_data)} 件のコンテンツ情報を組み立てました。")
+    print(f"Step 4: Assembled {len(content_data)} content entries.")
     return content_data
 
 def save_as_json(data, output_file_path):
     if not data:
-        print("処理対象のコンテンツが見つからなかったため、ファイルは出力されませんでした。")
+        print("No content found for processing, so no file was output.")
         return
-    print(f"データを '{output_file_path}' に保存しています...")
+    print(f"Saving data to '{output_file_path}'...")
     try:
         with open(output_file_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
-        print("JSONファイルへの保存が完了しました。")
+        print("JSON file saved successfully.")
     except IOError as e:
-        print(f"エラー: ファイルの書き込みに失敗しました: {e}")
+        print(f"Error: Failed to write file: {e}")
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='ConfluenceのXMLエクスポートをJSONに変換し、添付ファイルを復元します。')
-    parser.add_argument('input_file', help='入力するConfluenceのXMLファイル (例: entities.xml)')
+    parser = argparse.ArgumentParser(description='Converts a Confluence XML export to JSON and restores attachments.')
+    parser.add_argument('input_file', help='The Confluence XML file to input (e.g., entities.xml)')
     parser.add_argument('-o', '--output', default='confluence_data.json',
-                        help='出力するJSONファイル名 (デフォルト: confluence_data.json)')
+                        help='Name of the output JSON file (default: confluence_data.json)')
     parser.add_argument('-a', '--attachments-dir',
-                        help='Confluenceからエクスポートされた添付ファイルが格納されているディレクトリのパス')
-    # --- ここからが追加した引数 ---
+                        help='Path to the directory containing attachments exported from Confluence')
     parser.add_argument('-r', '--restore-dir',
-                        help='添付ファイルを復元して格納する先のディレクトリパス')
-    # --- ここまでが追加した引数 ---
-    parser.add_argument('--debug', action='store_true', help='デバッグ情報を有効にします')
+                        help='Path to the directory where attachments will be restored')
+    parser.add_argument('--debug', action='store_true', help='Enables debug information')
     
     args = parser.parse_args()
     
     if args.restore_dir and not args.attachments_dir:
-        parser.error('--restore-dir を使用するには --attachments-dir も指定する必要があります。')
+        parser.error("'--restore-dir' requires '--attachments-dir' to be specified as well.")
     
-    # --- 関数呼び出しを修正 ---
     pages = parse_confluence_xml(
         args.input_file,
         attachments_base_dir=args.attachments_dir,

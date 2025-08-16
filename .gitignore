@@ -32,3 +32,6 @@ venv/**
 
 # External files
 .external/**
+
+# Test data
+testdata/**
