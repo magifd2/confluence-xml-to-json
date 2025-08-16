@@ -15,7 +15,17 @@ This Python script converts XML data exported from Confluence into JSON format, 
 This script requires the `lxml` library. You can install it using the following command:
 
 ```bash
-pip install lxml
+pip3 install lxml
+```
+
+**Note for macOS Users:**
+On macOS, `python` might refer to Python 2. It's recommended to use `python3` and `pip3` for Python 3. Also, to avoid conflicts with system-wide Python installations, it's highly recommended to use a virtual environment (e.g., `venv`).
+
+Example with `venv`:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip3 install lxml
 ```
 
 ## Usage

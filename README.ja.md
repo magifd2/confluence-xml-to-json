@@ -15,7 +15,17 @@ ConfluenceからエクスポートされたXMLデータをJSON形式に変換し
 このスクリプトを実行するには、`lxml` ライブラリが必要です。以下のコマンドでインストールできます。
 
 ```bash
-pip install lxml
+pip3 install lxml
+```
+
+**macOSユーザーへの注意:**
+macOSでは、`python` コマンドがPython 2を指す場合があります。Python 3を使用するには `python3` および `pip3` を使うことを推奨します。また、システム全体のPythonインストールとの競合を避けるため、仮想環境（`venv` など）の使用を強く推奨します。
+
+`venv` を使用した例:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip3 install lxml
 ```
 
 ## 使用方法
