@@ -1,61 +1,61 @@
 # Confluence XML to JSON Converter
 
-ConfluenceからエクスポートされたXMLデータをJSON形式に変換し、必要に応じて添付ファイルを復元するPythonスクリプトです。
+This Python script converts XML data exported from Confluence into JSON format, with the option to restore attachments.
 
-## 機能
+## Features
 
-- Confluence XMLエクスポートファイル (`entities.xml` など) の解析
-- ページ、ブログ投稿、カスタムコンテンツの抽出
-- ユーザー、ラベル、コンテンツプロパティなどの関連情報のマッピング
-- 添付ファイルの復元と、JSONデータへのパスの記録
-- 構造化されたJSON形式での出力
+- Parses Confluence XML export files (e.g., `entities.xml`)
+- Extracts pages, blog posts, and custom content
+- Maps related information such as users, labels, and content properties
+- Restores attachments and records their paths in the JSON data
+- Outputs data in a structured JSON format
 
-## インストール
+## Installation
 
-このスクリプトを実行するには、`lxml` ライブラリが必要です。以下のコマンドでインストールできます。
+This script requires the `lxml` library. You can install it using the following command:
 
 ```bash
 pip install lxml
 ```
 
-## 使用方法
+## Usage
 
-スクリプトはコマンドライン引数を受け付けます。
+The script accepts command-line arguments.
 
 ```bash
-python conv.py <入力XMLファイル> [オプション]
+python conv.py <input_xml_file> [options]
 ```
 
-### 引数
+### Arguments
 
-- `<入力XMLファイル>`: 必須。解析するConfluenceのXMLエクスポートファイル (例: `entities.xml`)
+- `<input_xml_file>`: Required. The Confluence XML export file to parse (e.g., `entities.xml`)
 
-### オプション
+### Options
 
-- `-o`, `--output <ファイル名>`: 出力するJSONファイル名 (デフォルト: `confluence_data.json`)
-- `-a`, `--attachments-dir <ディレクトリパス>`: Confluenceからエクスポートされた添付ファイルが格納されているディレクトリのパス。通常はXMLファイルと同じ階層にある `attachments` ディレクトリなどを指定します。
-- `-r`, `--restore-dir <ディレクトリパス>`: 添付ファイルを復元して格納する先のディレクトリパス。このオプションを使用するには `--attachments-dir` も指定する必要があります。
-- `--debug`: デバッグ情報を有効にします。
+- `-o`, `--output <filename>`: Name of the output JSON file (default: `confluence_data.json`)
+- `-a`, `--attachments-dir <directory_path>`: Path to the directory containing attachments exported from Confluence. Typically, this is a directory like `attachments` located at the same level as the XML file.
+- `-r`, `--restore-dir <directory_path>`: Path to the directory where attachments will be restored. This option requires `--attachments-dir` to be specified.
+- `--debug`: Enables debug information.
 
-### 例
+### Examples
 
-1. **XMLをJSONに変換するだけの場合:**
+1. **To convert XML to JSON only:**
    ```bash
    python conv.py entities.xml
    ```
 
-2. **出力ファイル名を指定する場合:**
+2. **To specify an output filename:**
    ```bash
    python conv.py entities.xml -o my_confluence_data.json
    ```
 
-3. **添付ファイルを復元する場合:**
-   Confluenceのエクスポートデータに `attachments` ディレクトリが含まれている場合、そのパスを指定します。
+3. **To restore attachments:**
+   If your Confluence export data includes an `attachments` directory, specify its path.
    ```bash
    python conv.py entities.xml -a ./attachments -r ./restored_attachments
    ```
-   これにより、`./attachments` ディレクトリ内の添付ファイルが `./restored_attachments` ディレクトリに復元されます。
+   This will restore attachments from `./attachments` to `./restored_attachments`.
 
-## ライセンス
+## License
 
-このプロジェクトはMITライセンスの下で公開されています。詳細については [LICENSE](LICENSE) ファイルを参照してください。
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
