@@ -69,9 +69,9 @@ def parse_confluence_xml(xml_file_path, attachments_base_dir=None, restore_dir=N
     body_content_map = {}
     for obj in objects_by_class.get('BodyContent', []):
         content_id_node = obj.xpath("./id[@name='id']/text()")
-        body_node = obj.xpath("./property[@name='body']/text()")
-        if content_id_node and body_node:
-            body_content_map[content_id_node[0]] = body_node[0]
+        body_node = obj.xpath("./property[@name='body']")
+        if content_id_node and body_node and body_node[0].text is not None:
+            body_content_map[content_id_node[0]] = body_node[0].text
     print(f"Step 2.2: Loaded {len(body_content_map)} body content entries.")
     
     labels_map = {}
